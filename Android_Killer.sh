@@ -1,7 +1,7 @@
 #!/bin/sh
 ANDROID_KILLER_ROOT=$(pwd)
 D2J_PATH=${ANDROID_KILLER_ROOT}/dex-tools
-#APKTOOL_PATH=
+APKTOOL_PATH=${ANDROID_KILLER_ROOT}/apktool.jar
 
 function initApkDir() {
     if [ ! -d projects ]; then
@@ -27,14 +27,12 @@ function decodeApk() {
     project_home=${ANDROID_KILLER_ROOT}/projects/${file_name}
     cp $1 ${project_home}/bin
     cd ${project_home}/bin
-    apktool d ${file_name}.apk
+    java -jar ${APKTOOL_PATH} d ${file_name}.apk
     cp -r ${file_name}/smali ${project_home}/projectSrc
     cp -r ${file_name}/* ${project_home}/project/
     tmp_file_name=${file_name}_tmp
     cp ${file_name}.apk ${tmp_file_name}.zip
     unzip -d ${tmp_file_name} ${tmp_file_name}.zip
-    cp ${tmp_file_name}/classes.dex ${tmp_file_name}/classes1.dex
-    cp ${tmp_file_name}/classes.dex ${tmp_file_name}/classes2.dex
     dex_files=$(find ${tmp_file_name} -name "*.dex")
     echo ${dex_files}
     for dex_file in ${dex_files}; do
@@ -54,7 +52,7 @@ function buildApk() {
     cd ${ANDROID_KILLER_ROOT}/projects
     if [ -d $1 ]; then
         echo 'build apk waiting...'
-        apktool b ${project_home}/project -o ${project_home}/bin/$1_killer.apk
+        java -jar ${APKTOOL_PATH} b ${project_home}/project -o ${project_home}/bin/$1_killer.apk
         echo 'build success wait for sign'
     else
         echo 'no such project' $1
