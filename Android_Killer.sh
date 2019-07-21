@@ -19,12 +19,13 @@ function initApkDir() {
     cd ${ANDROID_KILLER_ROOT}
 }
 
-if [[ $1 == '-d' || $1 == 'd' ]]; then
+# init dirs decode apk and move file
+function decodeApk() {
     echo 'decode apk waiting...'
-    file_name=$(basename $2 .apk)
+    file_name=$(basename $1 .apk)
     initApkDir ${file_name}
     project_home=${ANDROID_KILLER_ROOT}/projects/${file_name}
-    cp $2 ${project_home}/bin
+    cp $1 ${project_home}/bin
     cd ${project_home}/bin
     apktool d ${file_name}.apk
     cp -r ${file_name}/smali ${project_home}/projectSrc
@@ -32,19 +33,50 @@ if [[ $1 == '-d' || $1 == 'd' ]]; then
     tmp_file_name=${file_name}_tmp
     cp ${file_name}.apk ${tmp_file_name}.zip
     unzip -d ${tmp_file_name} ${tmp_file_name}.zip
+    cp ${tmp_file_name}/classes.dex ${tmp_file_name}/classes1.dex
+    cp ${tmp_file_name}/classes.dex ${tmp_file_name}/classes2.dex
     dex_files=$(find ${tmp_file_name} -name "*.dex")
     echo ${dex_files}
-    # todo: multidex
-    dex_name=$(basename ${dex_files} .dex)
-    sh ${D2J_PATH}/d2j-dex2jar.sh -o ${project_home}/projectSrc/${dex_name}-dex2jar.jar $dex_files
+    for dex_file in $dex_files; do
+        dex_name=$(basename ${dex_file} .dex)
+        sh ${D2J_PATH}/d2j-dex2jar.sh -o ${project_home}/projectSrc/${dex_name}-dex2jar.jar $dex_file
+    done
     # clear tmp file
     rm -r ${file_name}
     rm -r ${tmp_file_name}
     rm ${tmp_file_name}.*
     echo 'decode apk finish excited!'
+}
+
+# bulid apk
+function buildApk() {
+    project_home=${ANDROID_KILLER_ROOT}/projects/$1
+    cd ${ANDROID_KILLER_ROOT}/projects
+    if [ -d $1 ]; then
+        echo 'build apk waiting...'
+        apktool b ${project_home}/project -o ${project_home}/bin/$1_killer.apk
+        echo 'build success wait for sign'
+    else
+        echo 'no such project' $1
+    fi
+}
+
+# sign
+function sign() {
+    echo 'signing waiting...'
+    project_home=${ANDROID_KILLER_ROOT}/projects/$1
+    cd ${ANDROID_KILLER_ROOT}/projects/$1/bin
+    jarsigner -verbose -keystore ${ANDROID_KILLER_ROOT}/key.keystore -storepass android_killer -signedjar $1_killer_signed.apk -digestalg SHA1 -sigalg MD5withRSA $1_killer.apk key.keystore
+    echo 'sign success'
+}
+
+if [[ $1 == '-d' || $1 == 'd' ]]; then
+    decodeApk $2
 elif [[ $1 == '-b' || $1 == 'b' ]]; then
-    echo 'build apk waiting...'
-    echo 'build'$2
+    buildApk $2
+    sign $2
+elif [[ $1 == 'e' || $1 == '-e' ]]; then
+    echo 'aaaa'
 else
-    echo 'need help'
+    echo 'no such command'
 fi
