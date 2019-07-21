@@ -37,9 +37,9 @@ function decodeApk() {
     cp ${tmp_file_name}/classes.dex ${tmp_file_name}/classes2.dex
     dex_files=$(find ${tmp_file_name} -name "*.dex")
     echo ${dex_files}
-    for dex_file in $dex_files; do
+    for dex_file in ${dex_files}; do
         dex_name=$(basename ${dex_file} .dex)
-        sh ${D2J_PATH}/d2j-dex2jar.sh -o ${project_home}/projectSrc/${dex_name}-dex2jar.jar $dex_file
+        sh ${D2J_PATH}/d2j-dex2jar.sh -o ${project_home}/projectSrc/${dex_name}-dex2jar.jar ${dex_file}
     done
     # clear tmp file
     rm -r ${file_name}
@@ -76,7 +76,16 @@ elif [[ $1 == '-b' || $1 == 'b' ]]; then
     buildApk $2
     sign $2
 elif [[ $1 == 'e' || $1 == '-e' ]]; then
-    echo 'aaaa'
+    echo 'extract' $2
+    apk_path=$(adb shell pm path $2)
+    # remove package: at start
+    apk_path=${apk_path:8}
+    echo $apk_path
+    adb pull ${apk_path} .
+    if [[ $3 != '' ]]; then
+        apk_name=$(basename ${apk_path})
+        mv $apk_name $3.apk
+    fi
 else
     echo 'no such command'
 fi
