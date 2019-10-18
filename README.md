@@ -32,7 +32,7 @@ projects
 
 ## build apk
 
-```sh Android_Killer.sh -d test```
+```sh Android_Killer.sh -b test```
 
 ``` shell
 projects
